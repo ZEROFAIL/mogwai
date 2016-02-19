@@ -61,6 +61,7 @@ class BaseElement(object):
 
         """
         self._id = values.get('id')
+        self._label = values.get('label')
         self._values = {}
         self._manual_values = {}
         #print_("Received values: %s" % values)
@@ -82,6 +83,10 @@ class BaseElement(object):
         for kwarg in set(values.keys()).difference(set(self._properties.keys())):  # set(self._properties.keys()) - set(values.keys()):
             if kwarg not in ('id', 'inV', 'outV', 'label'):
                 self._manual_values[kwarg] = BaseValueManager(None, values.get(kwarg))
+
+    @property
+    def label(self):
+        return self._label
 
     @property
     def id(self):
@@ -232,9 +237,10 @@ class BaseElement(object):
         :rtype: dict
         """
         dst_data = data.copy().get('properties', {})
-        dst_data.update({'label': data.copy()['label']})
-        if data.get('id', None):
-            dst_data.update({'id': data.copy().get('id')})
+        if data.get('label', ''):
+            dst_data.update({'label': data.copy()['label']})
+        if data.get('id', ''):
+            dst_data.update({'id': data.copy()['id']})
         #print_("Raw incoming data: %s" % data)
         for name, prop in cls._properties.items():
             #print_("trying db_field_name: %s and name: %s" % (prop.db_field_name, name))

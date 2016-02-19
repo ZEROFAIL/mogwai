@@ -28,6 +28,7 @@ before_script:
 script:
   - nosetests --with-coverage --cover-package=mogwai mogwai.tests.models
   - nosetests --with-coverage --cover-package=mogwai mogwai.tests.properties_tests
+  - nosetests --with-coverage --cover-package=mogwai mogwai.tests.relationships_tests
 
 after_success:
   - coveralls

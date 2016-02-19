@@ -3,6 +3,7 @@ import logging
 import warnings
 from functools import wraps
 
+from tornado.concurrent import Future
 from mogwai._compat import array_types, string_types
 from mogwai.tools import LazyImportClass
 from mogwai.exceptions import MogwaiRelationshipException
@@ -113,14 +114,24 @@ class Relationship(object):
             start = end = None
 
         operation = self.direction.lower() + 'V'
+        future = Future()
+        future_result = getattr(self.top_level_vertex, operation)(*allowed_elts)
 
-        result = getattr(self.top_level_vertex, operation)(*allowed_elts)
-        if callback:
-            return callback(result)
-        elif self.vertex_callback:
-            return self.vertex_callback(result)
-        else:
-            return result
+        def on_vertices(f):
+            try:
+                result = f.result()
+            except Exception as e:
+                future.set_exception(e)
+            else:
+                if callback:
+                    result = callback(result)
+                elif self.vertex_callback:
+                    result = self.vertex_callback(result)
+                future.set_result(result)
+
+        future_result.add_done_callback(on_vertices)
+
+        return future
 
     @requires_vertex
     def edges(self, limit=None, offset=None, callback=None):
@@ -146,14 +157,24 @@ class Relationship(object):
             start = end = None
 
         operation = self.direction.lower() + 'E'
+        future = Future()
+        future_result = getattr(self.top_level_vertex, operation)(*allowed_elts)
 
-        result = getattr(self.top_level_vertex, operation)(*allowed_elts)
-        if callback:
-            return callback(result)
-        elif self.edge_callback:
-            return self.edge_callback(result)
-        else:
-            return result
+        def on_edges(f):
+            try:
+                result = f.result()
+            except Exception as e:
+                future.set_exception(e)
+            else:
+                if callback:
+                    result = callback(result)
+                elif self.edge_callback:
+                    result = self.edge_callback(result)
+                future.set_result(result)
+
+        future_result.add_done_callback(on_edges)
+
+        return future
 
     def allowed(self, edge_type, vertex_type):
         """ Check whether or not the allowed Edge and Vertex type are compatible with the schema defined
@@ -247,19 +268,48 @@ class Relationship(object):
         if not self.allowed(edge_type, vertex_type):
             raise MogwaiRelationshipException("That is not a valid relationship setup: %s <-%s-> %s" %
                                                 (edge_type, self.direction, vertex_type))
+        future = Future()
+        new_vertex_future = self._create_entity(vertex_type, vertex_params)
 
-        new_vertex = self._create_entity(vertex_type, vertex_params)
-        if self.direction == IN:
-            outV = new_vertex
-            inV = self.top_level_vertex
-        else:
-            outV = self.top_level_vertex
-            inV = new_vertex
+        def on_vertex(f):
+            try:
+                new_vertex = f.result()
+            except Exception as e:
+                future.set_exception(e)
+            else:
+                if self.direction == IN:
+                    outV = new_vertex
+                    inV = self.top_level_vertex
+                else:
+                    outV = self.top_level_vertex
+                    inV = new_vertex
 
-        new_edge = self._create_entity(edge_type, edge_params, outV=outV, inV=inV)
-        if callback:
-            return callback(new_edge, new_vertex)
-        elif self.create_callback:
-            return self.create_callback(new_edge, new_vertex)
-        else:
-            return new_edge, new_vertex
+                new_edge_future = self._create_entity(
+                    edge_type, edge_params, outV=outV, inV=inV)
+
+                def on_edge(f2):
+                    try:
+                        new_edge = f2.result()
+                    except Exception as e:
+                        future.set_exception(e)
+                    else:
+                        if callback:
+                            try:
+                                result = callback(new_edge, new_vertex)
+                            except Exception as e:
+                                future.set_exception(e)
+                        elif self.create_callback:
+                            try:
+                                result = self.create_callback(
+                                    new_edge, new_vertex)
+                            except Exception as e:
+                                future.set_exception(e)
+                        else:
+                            result = (new_edge, new_vertex)
+                        future.set_result(result)
+
+                new_edge_future.add_done_callback(on_edge)
+
+        new_vertex_future.add_done_callback(on_vertex)
+
+        return future

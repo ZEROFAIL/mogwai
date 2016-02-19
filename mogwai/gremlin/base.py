@@ -263,7 +263,6 @@ class GremlinMethod(BaseGremlinMethod):
 
         """
         from mogwai.models.element import Element
-
         if isinstance(obj, dict) and 'id' in obj and 'type' in obj:
             return Element.deserialize(obj)
         elif isinstance(obj, dict):

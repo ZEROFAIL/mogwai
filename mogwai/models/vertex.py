@@ -105,10 +105,10 @@ class Vertex(Element):
                                                        getattr(self, '_values', {}))
 
     def __getstate__(self):
-        state = {'_id': self.id, '_type': 'vertex'}
+        state = {'id': self.id, '_type': 'vertex'}
         properties = self.as_save_params()
         properties['label'] = self.get_label()
-        state['_properties'] = properties
+        state['properties'] = properties
         return state
 
     def __setstate__(self, state):
@@ -363,7 +363,7 @@ class Vertex(Element):
             else:
                 future.set_result(result)
 
-        def on_save(f):
+        def on_delete(f):
             try:
                 stream = f.result()
             except Exception as e:
@@ -373,7 +373,7 @@ class Vertex(Element):
 
                 future_read.add_done_callback(on_read)
 
-        future_result.add_done_callback(on_save)
+        future_result.add_done_callback(on_delete)
         return future
 
     def _simple_traversal(self,
@@ -398,7 +398,6 @@ class Vertex(Element):
 
         """
         from mogwai.models.edge import Edge
-
         label_strings = []
         for label in labels:
             if inspect.isclass(label) and issubclass(label, Edge):
