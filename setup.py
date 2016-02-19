@@ -9,7 +9,7 @@ version = open('mogwai/VERSION', 'r').readline().strip()
 develop_requires = ['Sphinx==1.3.5',
     'tornado==4.3',
     'factory-boy==2.6.0',
-    'gremlinclient==0.1.6',
+    'gremlinclient==0.1.8',
     'newrelic==2.60.0.46',
     'nose==1.3.7',
     'pyformance==0.3.2',
@@ -55,7 +55,7 @@ setup(
     keywords='cassandra,titan,ogm,mogwai,thunderdome',
     install_requires=['pyparsing>=2.0.2',
                       'pytz>=2015.7'
-                      'gremlinclient>=0.1.6',
+                      'gremlinclient>=0.1.8',
                       'six>=1.10.0',
                       'factory-boy>=2.6.0',
                       'pyformance>=0.3.2',
