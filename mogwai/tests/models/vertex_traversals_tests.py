@@ -26,6 +26,9 @@ class Course(Vertex):
     credits = properties.Decimal()
 
 
+class ResearchGroup(Vertex):
+    name = properties.Text()
+
 # Edges
 class EnrolledIn(Edge):
     date_enrolled = properties.DateTime()
@@ -34,6 +37,14 @@ class EnrolledIn(Edge):
 
 class TaughtBy(Edge):
     overall_mood = properties.Text(default='Grumpy')
+
+
+class BelongsTo(Edge):
+    member_since = properties.DateTime()
+
+
+class SupervisedBy(Edge):
+    pass
 
 
 class BaseTraversalTestCase(BaseMogwaiTestCase):
@@ -59,12 +70,17 @@ class BaseTraversalTestCase(BaseMogwaiTestCase):
             cls.beekeeping = yield Course.create(name='Beekeeping', credits=15.0)
             cls.theoretics = yield Course.create(name='Theoretical Theoretics', credits=-3.5)
 
+            cls.dist_dev = yield ResearchGroup.create(name='Distributed Development')
+
             cls.eric_in_physics = yield EnrolledIn.create(cls.eric, cls.physics,
                                                     date_enrolled=datetime.datetime.now(tz=utc),
                                                     enthusiasm=10)  # eric loves physics
             cls.jon_in_beekeeping = yield EnrolledIn.create(cls.jon, cls.beekeeping,
                                                       date_enrolled=datetime.datetime.now(tz=utc),
                                                       enthusiasm=1)  # jon hates beekeeping
+
+            cls.jon_in_dist_dev = yield BelongsTo.create(
+                cls.jon, cls.dist_dev, member_since=datetime.datetime.now(tz=utc))
 
             cls.blake_in_theoretics = yield EnrolledIn.create(cls.blake, cls.theoretics,
                                                         date_enrolled=datetime.datetime.now(tz=utc),
@@ -73,6 +89,7 @@ class BaseTraversalTestCase(BaseMogwaiTestCase):
             cls.blake_beekeeping = yield TaughtBy.create(cls.beekeeping, cls.blake, overall_mood='Pedantic')
             cls.jon_physics = yield TaughtBy.create(cls.physics, cls.jon, overall_mood='Creepy')
             cls.eric_theoretics = yield TaughtBy.create(cls.theoretics, cls.eric, overall_mood='Obtuse')
+            cls.jon_eric = yield SupervisedBy.create(cls.eric, cls.jon)
         loop.run_sync(build_graph)
 
     @classmethod
@@ -87,6 +104,9 @@ class BaseTraversalTestCase(BaseMogwaiTestCase):
             yield cls.blake_in_theoretics.delete()
             yield cls.jon_in_beekeeping.delete()
             yield cls.eric_in_physics.delete()
+            yield cls.jon_eric.delete()
+            yield cls.jon_in_dist_dev.delete()
+            yield cls.dist_dev.delete()
             yield cls.theoretics.delete()
             yield cls.beekeeping.delete()
             yield cls.physics.delete()
@@ -106,8 +126,9 @@ class TestVertexTraversals(BaseTraversalTestCase):
 
         stream = yield self.jon.inV()
         results = yield stream.read()
-        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results), 2)
         self.assertIn(self.physics, results)
+        self.assertIn(self.eric, results)
 
         stream = yield self.physics.inV()
         results = yield stream.read()
@@ -139,16 +160,18 @@ class TestVertexTraversals(BaseTraversalTestCase):
         """Test that inE traversals work as expected"""
         stream = yield self.jon.inE()
         results = yield stream.read()
-        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results), 2)
         self.assertIn(self.jon_physics, results)
+        self.assertIn(self.jon_eric, results)
 
     @gen_test
     def test_outV_traversals(self):
         """Test that outV traversals work as expected"""
         stream = yield self.eric.outV()
         results = yield stream.read()
-        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results), 2)
         self.assertIn(self.physics, results)
+        self.assertIn(self.jon, results)
 
     @gen_test
     def test_outE_traverals(self):
@@ -163,9 +186,11 @@ class TestVertexTraversals(BaseTraversalTestCase):
         """Test that bothE traversals works"""
         stream = yield self.jon.bothE()
         results = yield stream.read()
-        self.assertEqual(len(results), 2)
+        self.assertEqual(len(results), 4)
         self.assertIn(self.jon_physics, results)
         self.assertIn(self.jon_in_beekeeping, results)
+        self.assertIn(self.jon_in_dist_dev, results)
+        self.assertIn(self.jon_eric, results)
 
     @gen_test
     def test_bothV_traversals(self):
@@ -183,44 +208,203 @@ class TestVertexCentricQueries(BaseTraversalTestCase):
     def test_out(self):
         stream = yield V(self.jon).out().get()
         results = yield stream.read()
-        self.assertEqual(results[0].name, "Beekeeping")
+        self.assertIn(self.beekeeping, results)
 
     @gen_test
     def test_in(self):
         stream = yield V(self.jon).in_step().get()
         results = yield stream.read()
-        self.assertEqual(results[0].name, "Physics 264")
+        self.assertIn(self.physics, results)
+        self.assertIn(self.eric, results)
 
-    # def test_query_in(self):
-    #     people = self.physics.query().labels(EnrolledIn).direction(IN).vertices()
-    #     for x in people:
-    #         self.assertIsInstance(x, Person)
-    #
-    # def test_query_out_edges(self):
-    #     classes = self.jon.query().labels(EnrolledIn).direction(OUT).edges()
-    #     for x in classes:
-    #         self.assertIsInstance(x, EnrolledIn, "Expected %s, got %s" % (type(EnrolledIn), type(x)))
-    #
-    # def test_two_labels(self):
-    #     edges = self.jon.query().labels(EnrolledIn, TaughtBy).direction(BOTH).edges()
-    #     for e in edges:
-    #         self.assertIsInstance(e, (EnrolledIn, TaughtBy))
-    #
-    # def test_has(self):
-    #     self.assertEqual(0, len(self.jon.query().labels(EnrolledIn).has('enrolledin_enthusiasm', 5,
-    #                                                                     GREATER_THAN).vertices()))
-    #     num = self.jon.query().labels(EnrolledIn).has('tests_vertex_traversals_tests_enthusiasm', 5, GREATER_THAN).count()
-    #     self.assertEqual(0, num)
-    #
-    #     self.assertEqual(1, len(self.jon.query().labels(EnrolledIn).has('enrolledin_enthusiasm', 5,
-    #                                                                     LESS_THAN).vertices()))
-    #     num = self.jon.query().labels(EnrolledIn).has('enrolledin_enthusiasm', 5, LESS_THAN).count()
-    #     self.assertEqual(1, num)
-    #
-    # def test_interval(self):
-    #     self.assertEqual(1, len(self.blake.query().labels(EnrolledIn).interval('enrolledin_enthusiasm', 2,
-    #                                                                            9).vertices()))
-    #     self.assertEqual(1, len(self.blake.query().labels(EnrolledIn).interval('enrolledin_enthusiasm', 9,
-    #                                                                            2).vertices()))
-    #     self.assertEqual(0, len(self.blake.query().labels(EnrolledIn).interval('enrolledin_enthusiasm', 2,
-    #                                                                            8).vertices()))
+    @gen_test
+    def test_both(self):
+        stream = yield V(self.jon).both().get()
+        results = yield stream.read()
+        self.assertIn(self.physics, results)
+        self.assertIn(self.beekeeping, results)
+
+    @gen_test
+    def test_out_labels(self):
+        stream = yield V(self.jon).out(EnrolledIn).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].name, "Beekeeping")
+        stream = yield V(self.jon).out(BelongsTo).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].name, "Distributed Development")
+        stream = yield V(self.jon).out(BelongsTo, EnrolledIn).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 2)
+        self.assertIn(self.dist_dev, results)
+        self.assertIn(self.beekeeping, results)
+
+    @gen_test
+    def test_in_labels(self):
+        stream = yield V(self.jon).in_step(TaughtBy).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].name, "Physics 264")
+        stream = yield V(self.jon).in_step(SupervisedBy).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].name, "Eric")
+        stream = yield V(self.jon).in_step(SupervisedBy, TaughtBy).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 2)
+        self.assertIn(self.physics, results)
+        self.assertIn(self.eric, results)
+
+    @gen_test
+    def test_both_labels(self):
+        stream = yield V(self.jon).both(EnrolledIn).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].name, "Beekeeping")
+        stream = yield V(self.jon).both(BelongsTo).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].name, "Distributed Development")
+        stream = yield V(self.jon).both(BelongsTo, EnrolledIn).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 2)
+        self.assertIn(self.dist_dev, results)
+        self.assertIn(self.beekeeping, results)
+        stream = yield V(self.jon).both(TaughtBy).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].name, "Physics 264")
+        stream = yield V(self.jon).both(SupervisedBy).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].name, "Eric")
+        stream = yield V(self.jon).both(SupervisedBy, TaughtBy).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 2)
+        self.assertIn(self.physics, results)
+        self.assertIn(self.eric, results)
+        stream = yield V(self.jon).both(
+            SupervisedBy, TaughtBy, BelongsTo, EnrolledIn).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 4)
+        self.assertIn(self.physics, results)
+        self.assertIn(self.eric, results)
+        self.assertIn(self.dist_dev, results)
+        self.assertIn(self.beekeeping, results)
+
+    @gen_test
+    def test_out_v(self):
+        stream = yield V(self.blake).in_e().out_v().get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertIn(self.beekeeping, results)
+
+    @gen_test
+    def test_out_v(self):
+        stream = yield V(self.blake).out_e().in_v().get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertIn(self.theoretics, results)
+
+    @gen_test
+    def test_both_v(self):
+        stream = yield V(self.blake).out_e().both_v().get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 2)
+        self.assertIn(self.theoretics, results)
+        self.assertIn(self.blake, results)
+
+    @gen_test
+    def test_other_v(self):
+        stream = yield V(self.jon).both_e().other_v().get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 4)
+        self.assertIn(self.beekeeping, results)
+        self.assertIn(self.dist_dev, results)
+        self.assertIn(self.eric, results)
+        self.assertIn(self.physics, results)
+
+    @gen_test
+    def test_both_v_multiple(self):
+        stream = yield V(self.jon).both_e().both_v().get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 8)
+        self.assertIn(self.beekeeping, results)
+        self.assertIn(self.dist_dev, results)
+        self.assertIn(self.eric, results)
+        self.assertIn(self.physics, results)
+        self.assertIn(self.jon, results)
+
+    @gen_test
+    def test_out_e(self):
+        stream = yield V(self.jon).out_e().get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 2)
+        self.assertIn(self.jon_in_dist_dev, results)
+        self.assertIn(self.jon_in_beekeeping, results)
+        stream = yield V(self.jon).out_e(BelongsTo).get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 1)
+        self.assertIn(self.jon_in_dist_dev, results)
+        stream = yield V(self.jon).out_e(EnrolledIn).get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 1)
+        self.assertIn(self.jon_in_beekeeping, results)
+        stream = yield V(self.jon).out_e(EnrolledIn, BelongsTo).get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 2)
+        self.assertIn(self.jon_in_dist_dev, results)
+        self.assertIn(self.jon_in_beekeeping, results)
+
+    @gen_test
+    def test_in_e(self):
+        stream = yield V(self.jon).in_e().get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 2)
+        self.assertIn(self.jon_eric, results)
+        self.assertIn(self.jon_physics, results)
+        stream = yield V(self.jon).in_e(SupervisedBy).get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 1)
+        self.assertIn(self.jon_eric, results)
+        stream = yield V(self.jon).in_e(TaughtBy).get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 1)
+        self.assertIn(self.jon_physics, results)
+        stream = yield V(self.jon).in_e(SupervisedBy, TaughtBy).get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 2)
+        self.assertIn(self.jon_eric, results)
+        self.assertIn(self.jon_physics, results)
+
+    @gen_test
+    def test_both_e(self):
+        stream = yield V(self.jon).both_e().get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 4)
+        self.assertIn(self.jon_eric, results)
+        self.assertIn(self.jon_physics, results)
+        self.assertIn(self.jon_in_dist_dev, results)
+        self.assertIn(self.jon_in_beekeeping, results)
+        stream = yield V(self.jon).both_e(SupervisedBy).get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 1)
+        self.assertIn(self.jon_eric, results)
+        stream = yield V(self.jon).both_e(EnrolledIn).get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 1)
+        self.assertIn(self.jon_in_beekeeping, results)
+        stream = yield V(self.jon).both_e(SupervisedBy, BelongsTo).get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 2)
+        self.assertIn(self.jon_eric, results)
+        self.assertIn(self.jon_in_dist_dev, results)
+        stream = yield V(self.jon).both_e(
+            SupervisedBy, BelongsTo, EnrolledIn, TaughtBy).get()
+        results = yield stream.read()
+        self.assertTrue(len(results), 4)
+        self.assertIn(self.jon_eric, results)
+        self.assertIn(self.jon_physics, results)
+        self.assertIn(self.jon_in_dist_dev, results)
+        self.assertIn(self.jon_in_beekeeping, results)

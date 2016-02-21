@@ -140,7 +140,6 @@ class V(object):
         pass
 
     def get(self, deserialize=True, *args, **kwargs):
-        # import ipdb; ipdb.set_trace()
         script = "g.V(vid).{}".format(self._get())
         self._bindings.update({"vid": self._vertex._id})
 
