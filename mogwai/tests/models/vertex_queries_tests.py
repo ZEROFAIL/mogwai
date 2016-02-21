@@ -3,7 +3,7 @@ from nose.plugins.attrib import attr
 
 from mogwai.connection import MogwaiQueryError
 from mogwai.tests.base import BaseMogwaiTestCase
-from mogwai.models import Query, IN, OUT, Edge, Vertex, GREATER_THAN
+from mogwai.models import V, Edge, Vertex, GREATER_THAN
 from mogwai.properties import Integer, Double
 
 
@@ -24,58 +24,86 @@ class MockEdge(Edge):
 class SimpleQueryTest(BaseMogwaiTestCase):
     def setUp(self):
         super(SimpleQueryTest, self).setUp()
-        self.q = Query(MockVertex())
-
-    def test_limit(self):
-        result = self.q.limit(10)._get_partial()
-        self.assertEqual(result, "g.V(id).limit(limit)")
-
-    def test_direction_in(self):
-        result = self.q.direction(IN)._get_partial()
-        self.assertEqual(result, "g.V(id).in()")
-
-    def test_direction_out(self):
-        result = self.q.direction(OUT)._get_partial()
-        self.assertEqual(result, "g.V(id).out()")
-
-    def test_labels(self):
-        result = self.q.labels('test')._get_partial()
-        self.assertEqual(result, "g.V(id).hasLabel('test')")
-        # ensure the original wasn't modified
-        self.assertListEqual(self.q._labels, [])
-
-    def test_2labels(self):
-        result = self.q.labels('test', 'test2')._get_partial()
-        self.assertEqual(result, "g.V(id).hasLabel('test', 'test2')")
-
-    def test_object_label(self):
-        result = self.q.labels(MockEdge)._get_partial()
-        self.assertEqual(result, "g.V(id).hasLabel('mock_edge')")
+        self.q = V(MockVertex())
 
     def test_has(self):
-        result = self.q.has(MockEdge.get_property_by_name("age"), 10)._get_partial()
-        self.assertEqual(result, "g.V(id).has('mockedge_age', eq(v0))")
+        result = self.q.has(MockEdge.get_property_by_name("age"), 10)
+        self.assertEqual(result._get(), "has('mockedge_age', eq(b0))")
+        self.assertEqual(result._bindings['b0'], 10)
 
     def test_has_double_casting(self):
-        result = self.q.has(MockEdge.get_property_by_name("fierceness"), 3.3)._get_partial()
-        self.assertEqual(result, "g.V(id).has('mockedge_fierceness', eq(v0))")
-    #
-    # def test_direction_except(self):
-    #     with self.assertRaises(MogwaiQueryError):
-    #         self.q.direction(OUT).direction(OUT)
-    #
-    # def test_has_double_casting_plain(self):
-    #     result = self.q.has('fierceness', 3.3)._get_partial()
-    #     self.assertEqual(result, "g.v(id).query().has('fierceness', v0 as double, Query.Compare.EQUAL)")
-    #
-    def test_has_int(self):
-        result = self.q.has('age', 21, GREATER_THAN)._get_partial()
-        self.assertEqual(result, "g.V(id).has('age', gt(v0))")
+        result = self.q.has(MockEdge.get_property_by_name("fierceness"), 3.3)
+        self.assertEqual(result._get(), "has('mockedge_fierceness', eq(b0))")
+        self.assertEqual(result._bindings['b0'], 3.3)
 
-    def test_intervals(self):
-        result = self.q.interval('age', 10, 20)._get_partial()
-        self.assertEqual(result, "g.V(id).has('age', within(v0, v1))")
-    #
-    # def test_double_interval(self):
-    #     result = self.q.interval('fierceness', 2.5, 5.2)._get_partial()
-    #     self.assertEqual(result, "g.v(id).query().interval('fierceness', v0 as double, v1 as double)")
+    def test_has_within(self):
+        result = self.q.has(
+            MockEdge.get_property_by_name("age"), (10, 11), compare="within")
+        self.assertEqual(result._get(), "has('mockedge_age', within(*b0))")
+        self.assertEqual(result._bindings['b0'], (10, 11))
+
+    def test_has_label(self):
+        result = self.q.has_label("label1", "label2")
+        self.assertEqual(result._get(), "hasLabel(*b0)")
+        self.assertEqual(result._bindings['b0'], ["label1", "label2"])
+
+    def test_has_id(self):
+        result = self.q.has_id("aaaa", "bbbb")
+        self.assertEqual(result._get(), "hasId(*b0)")
+        self.assertEqual(result._bindings['b0'], ("aaaa", "bbbb"))
+
+    def test_has_key(self):
+        result = self.q.has_key("name", "age")
+        self.assertEqual(result._get(), "hasKey(*b0)")
+        self.assertEqual(result._bindings['b0'], ("name", "age"))
+
+    def test_has_value(self):
+        result = self.q.has_value("dave", 25)
+        self.assertEqual(result._get(), "hasValue(*b0)")
+        self.assertEqual(result._bindings['b0'], ("dave", 25))
+
+    def test_out(self):
+        result = self.q.out("tweet", "user")
+        self.assertEqual(result._get(), "out(*b0)")
+        self.assertEqual(result._bindings['b0'], ["tweet", "user"])
+
+    def test_in(self):
+        result = self.q.in_step("tweet", "user")
+        self.assertEqual(result._get(), "in(*b0)")
+        self.assertEqual(result._bindings['b0'], ["tweet", "user"])
+
+    def test_both(self):
+        result = self.q.both("tweet", "user")
+        self.assertEqual(result._get(), "both(*b0)")
+        self.assertEqual(result._bindings['b0'], ["tweet", "user"])
+
+    def test_out_e(self):
+        result = self.q.out_e("tweets", "follows")
+        self.assertEqual(result._get(), "outE(*b0)")
+        self.assertEqual(result._bindings['b0'], ["tweets", "follows"])
+
+    def test_in_e(self):
+        result = self.q.in_e("tweets", "follows")
+        self.assertEqual(result._get(), "inE(*b0)")
+        self.assertEqual(result._bindings['b0'], ["tweets", "follows"])
+
+    def test_both_e(self):
+        result = self.q.both_e("tweets", "follows")
+        self.assertEqual(result._get(), "bothE(*b0)")
+        self.assertEqual(result._bindings['b0'], ["tweets", "follows"])
+
+    def test_out_v(self):
+        result = self.q.out_v()
+        self.assertEqual(result._get(), "outV()")
+
+    def test_in_v(self):
+        result = self.q.in_v()
+        self.assertEqual(result._get(), "inV()")
+
+    def test_both_v(self):
+        result = self.q.both_v()
+        self.assertEqual(result._get(), "bothV()")
+
+    def test_other_v(self):
+        result = self.q.other_v()
+        self.assertEqual(result._get(), "otherV()")

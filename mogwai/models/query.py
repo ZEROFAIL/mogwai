@@ -6,15 +6,18 @@ from tornado.concurrent import Future
 from mogwai._compat import float_types, print_
 from mogwai import connection
 from mogwai.exceptions import MogwaiQueryError
-from .element import Element, EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, LESS_THAN, LESS_THAN_EQUAL,\
-    OUT, IN, BOTH, WITHIN
+from .element import Element
+from mogwai.constants import (EQUAL, NOT_EQUAL, GREATER_THAN,
+                              GREATER_THAN_EQUAL, LESS_THAN,
+                              LESS_THAN_EQUAL, WITHIN, INSIDE,
+                              OUTSIDE, BETWEEN)
 import copy
 from mogwai.properties.base import GraphProperty
 
 logger = logging.getLogger(__name__)
 
 
-class Query(object):
+class V(object):
     """
     All query operations return a new query object, which currently deviates from blueprints.
     The blueprints query object modifies and returns the same object
@@ -24,35 +27,15 @@ class Query(object):
 
     def __init__(self, vertex):
         self._vertex = vertex
-        self._has = []
-        self._interval = []
-        self._labels = []
-        self._direction = []
-        self._vars = {}
+        self._steps = []
+        self._bindings = {}
 
     def count(self, *args, **kwargs):
         """
         :returns: number of matching vertices
         :rtype: int
         """
-        return self._execute('count', deserialize=False, **kwargs)
-
-    def direction(self, direction):
-        """
-        :param direction: direction to compare or traverse
-        :rtype: Query
-        """
-        q = copy.copy(self)
-        if self._direction:
-            raise MogwaiQueryError("Direction already set")
-        q._direction = direction
-        return q
-
-    def edges(self, *args, **kwargs):
-        """
-        :rtype: list[edge.Edge]
-        """
-        return self._execute('', dir_element='E', **kwargs)
+        pass
 
     def has(self, key, value, compare=EQUAL):
         """
@@ -65,119 +48,111 @@ class Query(object):
         :rtype: Query
         """
         q = copy.copy(self)
-        #print_("Trying for key: %s with value: %s" % (key, value))
         if issubclass(type(key), property):
             logger.error("Use %s.get_property_by_name instead, this won't work" % self.__class__.__name__)
             raise MogwaiQueryError("Use %s.get_property_by_name instead, this won't work" % self.__class__.__name__)
-        q._has.append((key, value, compare))
+        binding = self._get_binding(value)
+        if compare in [INSIDE, OUTSIDE, BETWEEN, WITHIN]:
+            step = "has('{}', {}(*{}))".format(key, compare, binding)
+        else:
+            step = "has('{}', {}({}))".format(key, compare, binding)
+        q._steps.append(step)
         return q
 
-    def interval(self, key, start, end):
-        """
-        :rtype : Query
-        """
-        if start > end:
-            start, end = end, start
-        q = copy.copy(self)
-        q._interval.append((key, start, end))
-        return q
+    def has_label(self, *labels):
+        labels = self._get_labels(labels)
+        return self._unpack_step("hasLabel", labels)
 
-    def labels(self, *args):
-        """
-        :param args: list of Edges
-        :type args: list[edge.Edge]
-        :rtype: Query
-        """
-        tmp = []
-        for x in args:
+    def has_id(self, *ids):
+        return self._unpack_step("hasId", ids)
+
+    def has_key(self, *keys):
+        return self._unpack_step("hasKey", keys)
+
+    def has_value(self, *values):
+        return self._unpack_step("hasValue", values)
+
+    def out(self, *labels):
+        labels = self._get_labels(labels)
+        return self._unpack_step("out", labels)
+
+    def in_step(self, *labels):
+        labels = self._get_labels(labels)
+        return self._unpack_step("in", labels)
+
+    def both(self, *labels):
+        labels = self._get_labels(labels)
+        return self._unpack_step("both", labels)
+
+    def out_e(self, *labels):
+        labels = self._get_labels(labels)
+        return self._unpack_step("outE", labels)
+
+    def in_e(self, *labels):
+        labels = self._get_labels(labels)
+        return self._unpack_step("inE", labels)
+
+    def both_e(self, *labels):
+        labels = self._get_labels(labels)
+        return self._unpack_step("bothE", labels)
+
+    def out_v(self):
+        return self._simple_step("outV")
+
+    def in_v(self):
+        return self._simple_step("inV")
+
+    def both_v(self):
+        return self._simple_step("bothV")
+
+    def other_v(self):
+        return self._simple_step("otherV")
+
+    def _get_labels(self, labels):
+        new_labels = []
+        for label in labels:
             try:
-                tmp.append(x.get_label())
+                label = label.get_label()
+                new_labels.append(label)
             except:
-                tmp.append(x)
+                new_labels.append(label)
+        return new_labels
 
+    def _simple_step(self, func):
         q = copy.copy(self)
-        q._labels = tmp
+        step = '{}()'.format(func)
+        q._steps.append(step)
         return q
+
+    def _unpack_step(self, func, vals):
+        q = copy.copy(self)
+        binding = self._get_binding(vals)
+        step = '{}(*{})'.format(func, binding)
+        q._steps.append(step)
+        return q
+
+    def _get_binding(self, val):
+        binding = 'b{}'.format(len(self._bindings))
+        self._bindings[binding] = val
+        return binding
 
     def limit(self, limit):
-        q = copy.copy(self)
-        q._limit = limit
-        return q
+        pass
 
-    def remove(self, *args, **kwargs):
-        """ Deletes a vertex or edge """
-        return self._execute('remove', deserialize=False, **kwargs)
-
-    def vertexIds(self, *args, **kwargs):
-        return self._execute('vertexIds', deserialize=False, **kwargs)
-
-    def vertices(self, *args, **kwargs):
-        return self._execute('', dir_element='', **kwargs)
-
-    def _get_partial(self, dir_element=""):
-        limit = ".limit(limit)" if self._limit else ""
-        dir = ".{}{}()".format(self._direction, dir_element) if self._direction else ""
-
-        # do labels
-        labels = ""
-        if self._labels:
-            labels = ["'{}'".format(x) for x in self._labels]
-            labels = ", ".join(labels)
-            labels = ".hasLabel({})".format(labels)
-
-        ### construct has clauses
-        has = []
-
-        for x in self._has:
-            c = "v{}".format(len(self._vars))
-            self._vars[c] = x[1]
-
-            # not sure if necessary with new titan
-            # val = "{} as double".format(c) if isinstance(x[1], float_types) else c
-            key = x[0]
-            has.append("has('{}', {}({}))".format(key, x[2], c))
-
-        if has:
-            tmp = ".".join(has)
-            has = '.{}'.format(tmp)
-        else:
-            has = ""
-        ### end construct has clauses
-
-        intervals = []
-        for x in self._interval:
-            c = "v{}".format(len(self._vars))
-            self._vars[c] = x[1]
-            c2 = "v{}".format(len(self._vars))
-            self._vars[c2] = x[2]
-
-            # not sure if necessary
-            # val1 = "{} as double".format(c) if isinstance(x[1], float_types) else c
-            # val2 = "{} as double".format(c2) if isinstance(x[2], float_types) else c2
-
-            tmp = "has('{}', {}({}, {}))".format(x[0], WITHIN, c, c2)
-            intervals.append(tmp)
-
-        if intervals:
-            intervals = ".{}".format(".".join(intervals))
-        else:
-            intervals = ""
-
-        return "g.V(id){}{}{}{}{}".format(labels, limit, dir, has, intervals)
-
-    def _execute(self, func, deserialize=True, *args, **kwargs):
-        dir_element = kwargs.get("dir_element", "")
-        if func:
-            func = ".{}()".format(func)
-        tmp = "{}{}".format(self._get_partial(dir_element=dir_element), func)
-        import ipdb; ipdb.set_trace()
-        self._vars.update({"id": self._vertex._id, "limit": self._limit})
+    def get(self, deserialize=True, *args, **kwargs):
+        # import ipdb; ipdb.set_trace()
+        script = "g.V(vid).{}".format(self._get())
+        self._bindings.update({"vid": self._vertex._id})
 
         def process_results(results):
             if deserialize:
                 results = [Element.deserialize(r) for r in results]
+            return results
 
         future_results = connection.execute_query(
-            tmp, params=self._vars, handler=process_results, **kwargs)
+            script, params=self._bindings, handler=process_results, **kwargs)
 
         return future_results
+
+    def _get(self):
+        return '.'.join(self._steps)

@@ -48,10 +48,11 @@ def _delete_edge(eid) {
      */
      try {
         def e = g.E(eid).next()
-        if (e != null) {
+				if (e != null) {
         	e.remove()
-        }
+				}
         graph.tx().commit()
+				return null
      } catch (err) {
         graph.tx().rollback()
         throw(err)

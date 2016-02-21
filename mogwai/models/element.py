@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
-from collections import OrderedDict
+import logging
 import re
+import warnings
+from collections import OrderedDict
 
 from tornado.concurrent import Future
 
@@ -12,13 +14,7 @@ from mogwai.exceptions import MogwaiException, SaveStrategyException, \
 from mogwai.gremlin import BaseGremlinMethod
 from mogwai import connection
 
-# import for backward compatibility
-from mogwai.constants import BOTH, EQUAL, GREATER_THAN, GREATER_THAN_EQUAL, \
-    IN, LESS_THAN, LESS_THAN_EQUAL, NOT_EQUAL, OUT, WITHIN
 
-
-import logging
-import warnings
 logger = logging.getLogger(__name__)
 
 #dict of node and edge types for rehydrating results

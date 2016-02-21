@@ -10,7 +10,8 @@ from nose.plugins.attrib import attr
 
 from mogwai.tests.base import BaseMogwaiTestCase
 
-from mogwai.models import Vertex, Edge, IN, OUT, BOTH, GREATER_THAN, LESS_THAN
+from mogwai.models import (Vertex, V, Edge, IN, OUT, BOTH, GREATER_THAN,
+                           LESS_THAN)
 from mogwai import properties
 
 
@@ -174,46 +175,52 @@ class TestVertexTraversals(BaseTraversalTestCase):
         self.assertEqual(len(results), 2)
         self.assertIn(self.beekeeping, results)
 
-#
-# @attr('unit', 'traversals')
-# class TestVertexCentricQueries(BaseTraversalTestCase):
-#
-#     @gen_test
-#     def test_query_vertices(self):
-#         stream = yield self.jon.query().direction(OUT).labels(EnrolledIn).vertices()
-#         results = yield stream.read()
-#         print(results)
-#
-#     def test_query_in(self):
-#         people = self.physics.query().labels(EnrolledIn).direction(IN).vertices()
-#         for x in people:
-#             self.assertIsInstance(x, Person)
-#
-#     def test_query_out_edges(self):
-#         classes = self.jon.query().labels(EnrolledIn).direction(OUT).edges()
-#         for x in classes:
-#             self.assertIsInstance(x, EnrolledIn, "Expected %s, got %s" % (type(EnrolledIn), type(x)))
-#
-#     def test_two_labels(self):
-#         edges = self.jon.query().labels(EnrolledIn, TaughtBy).direction(BOTH).edges()
-#         for e in edges:
-#             self.assertIsInstance(e, (EnrolledIn, TaughtBy))
-#
-#     def test_has(self):
-#         self.assertEqual(0, len(self.jon.query().labels(EnrolledIn).has('enrolledin_enthusiasm', 5,
-#                                                                         GREATER_THAN).vertices()))
-#         num = self.jon.query().labels(EnrolledIn).has('tests_vertex_traversals_tests_enthusiasm', 5, GREATER_THAN).count()
-#         self.assertEqual(0, num)
-#
-#         self.assertEqual(1, len(self.jon.query().labels(EnrolledIn).has('enrolledin_enthusiasm', 5,
-#                                                                         LESS_THAN).vertices()))
-#         num = self.jon.query().labels(EnrolledIn).has('enrolledin_enthusiasm', 5, LESS_THAN).count()
-#         self.assertEqual(1, num)
-#
-#     def test_interval(self):
-#         self.assertEqual(1, len(self.blake.query().labels(EnrolledIn).interval('enrolledin_enthusiasm', 2,
-#                                                                                9).vertices()))
-#         self.assertEqual(1, len(self.blake.query().labels(EnrolledIn).interval('enrolledin_enthusiasm', 9,
-#                                                                                2).vertices()))
-#         self.assertEqual(0, len(self.blake.query().labels(EnrolledIn).interval('enrolledin_enthusiasm', 2,
-#                                                                                8).vertices()))
+
+@attr('unit', 'traversals')
+class TestVertexCentricQueries(BaseTraversalTestCase):
+
+    @gen_test
+    def test_out(self):
+        stream = yield V(self.jon).out().get()
+        results = yield stream.read()
+        self.assertEqual(results[0].name, "Beekeeping")
+
+    @gen_test
+    def test_in(self):
+        stream = yield V(self.jon).in_step().get()
+        results = yield stream.read()
+        self.assertEqual(results[0].name, "Physics 264")
+
+    # def test_query_in(self):
+    #     people = self.physics.query().labels(EnrolledIn).direction(IN).vertices()
+    #     for x in people:
+    #         self.assertIsInstance(x, Person)
+    #
+    # def test_query_out_edges(self):
+    #     classes = self.jon.query().labels(EnrolledIn).direction(OUT).edges()
+    #     for x in classes:
+    #         self.assertIsInstance(x, EnrolledIn, "Expected %s, got %s" % (type(EnrolledIn), type(x)))
+    #
+    # def test_two_labels(self):
+    #     edges = self.jon.query().labels(EnrolledIn, TaughtBy).direction(BOTH).edges()
+    #     for e in edges:
+    #         self.assertIsInstance(e, (EnrolledIn, TaughtBy))
+    #
+    # def test_has(self):
+    #     self.assertEqual(0, len(self.jon.query().labels(EnrolledIn).has('enrolledin_enthusiasm', 5,
+    #                                                                     GREATER_THAN).vertices()))
+    #     num = self.jon.query().labels(EnrolledIn).has('tests_vertex_traversals_tests_enthusiasm', 5, GREATER_THAN).count()
+    #     self.assertEqual(0, num)
+    #
+    #     self.assertEqual(1, len(self.jon.query().labels(EnrolledIn).has('enrolledin_enthusiasm', 5,
+    #                                                                     LESS_THAN).vertices()))
+    #     num = self.jon.query().labels(EnrolledIn).has('enrolledin_enthusiasm', 5, LESS_THAN).count()
+    #     self.assertEqual(1, num)
+    #
+    # def test_interval(self):
+    #     self.assertEqual(1, len(self.blake.query().labels(EnrolledIn).interval('enrolledin_enthusiasm', 2,
+    #                                                                            9).vertices()))
+    #     self.assertEqual(1, len(self.blake.query().labels(EnrolledIn).interval('enrolledin_enthusiasm', 9,
+    #                                                                            2).vertices()))
+    #     self.assertEqual(0, len(self.blake.query().labels(EnrolledIn).interval('enrolledin_enthusiasm', 2,
+    #                                                                            8).vertices()))
