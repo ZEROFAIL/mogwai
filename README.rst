@@ -4,8 +4,9 @@ mogwai
 .. image:: https://travis-ci.org/ZEROFAIL/mogwai.svg?branch=tinkerpop3
     :target: https://travis-ci.org/ZEROFAIL/mogwai
 
-.. image:: https://coveralls.io/repos/github/platinummonkey/mogwai/badge.svg?branch=tinkerpop3
-    :target: https://coveralls.io/github/platinummonkey/mogwai?branch=tinkerpop3
+.. image:: https://coveralls.io/repos/github/ZEROFAIL/mogwai/badge.svg?branch=tinkerpop3 
+    :target: https://coveralls.io/github/ZEROFAIL/mogwai?branch=tinkerpop3
+
 
 
 mogwai in an object-graph mapper (OGM) designed specifically for use with Tinkerpop3 graph databases.
