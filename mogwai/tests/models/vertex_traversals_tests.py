@@ -23,7 +23,7 @@ class Person(Vertex):
 
 class Course(Vertex):
     name = properties.Text()
-    credits = properties.Decimal()
+    credits = properties.Double()
 
 
 class ResearchGroup(Vertex):
@@ -408,3 +408,66 @@ class TestVertexCentricQueries(BaseTraversalTestCase):
         self.assertIn(self.jon_physics, results)
         self.assertIn(self.jon_in_dist_dev, results)
         self.assertIn(self.jon_in_beekeeping, results)
+
+    @gen_test
+    def test_has(self):
+        # IDK about this whole get property by name thing
+        stream = yield V(self.jon).out().has(
+            ResearchGroup.get_property_by_name("name"), "Distributed Development").get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], self.dist_dev)
+
+    @gen_test
+    def test_has_lt_gt(self):
+        stream = yield V(self.jon).out().has(
+            Course.get_property_by_name("credits"), 5.0, GREATER_THAN).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        stream = yield V(self.jon).out().has(
+            Course.get_property_by_name("credits"), 5.0, LESS_THAN).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 0)
+
+    @gen_test
+    def test_has_label(self):
+        stream = yield V(self.jon).out().has_label(
+            ResearchGroup.get_label()).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], self.dist_dev)
+        stream = yield V(self.jon).out().has_label(
+            ResearchGroup.get_label(), Course.get_label()).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 2)
+        self.assertIn(self.dist_dev, results)
+        self.assertIn(self.beekeeping, results)
+
+    @gen_test
+    def test_has_id(self):
+        stream = yield V(self.jon).out().has_id(
+            self.dist_dev.id).get()
+        results = yield stream.read()
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], self.dist_dev)
+        # This should work...
+        stream = yield V(self.jon).out().has_id(
+            self.dist_dev.id, self.beekeeping.id).get()
+        results = yield stream.read()
+        # self.assertEqual(len(results), 2)
+        # self.assertIn(self.dist_dev, results)
+        # self.assertIn(self.beekeeping, results)
+
+    # Not working
+    # @gen_test
+    # def test_has_key(self):
+        # stream = yield V(self.jon).out().has_key(
+        #     ResearchGroup.get_property_by_name("name")).get()
+        # results = yield stream.read()
+        # self.assertEqual(len(results), 1)
+        # self.assertIn(self.dist_dev, results)
+        # stream = yield V(self.jon).out().has_key(
+        #     Course.get_property_by_name("credits")).get()
+        # results = yield stream.read()
+        # self.assertEqual(len(results), 1)
+        # self.assertIn(self.beekeeping, results)

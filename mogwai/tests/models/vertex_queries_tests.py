@@ -52,15 +52,15 @@ class SimpleQueryTest(BaseMogwaiTestCase):
         self.assertEqual(result._get(), "hasId(*b0)")
         self.assertEqual(result._bindings['b0'], ("aaaa", "bbbb"))
 
-    def test_has_key(self):
-        result = self.q.has_key("name", "age")
-        self.assertEqual(result._get(), "hasKey(*b0)")
-        self.assertEqual(result._bindings['b0'], ("name", "age"))
+    # def test_has_key(self):
+    #     result = self.q.has_key("name", "age")
+    #     self.assertEqual(result._get(), "hasKey(*b0)")
+    #     self.assertEqual(result._bindings['b0'], ("name", "age"))
 
-    def test_has_value(self):
-        result = self.q.has_value("dave", 25)
-        self.assertEqual(result._get(), "hasValue(*b0)")
-        self.assertEqual(result._bindings['b0'], ("dave", 25))
+    # def test_has_value(self):
+    #     result = self.q.has_value("dave", 25)
+    #     self.assertEqual(result._get(), "hasValue(*b0)")
+    #     self.assertEqual(result._bindings['b0'], ("dave", 25))
 
     def test_out(self):
         result = self.q.out("tweet", "user")

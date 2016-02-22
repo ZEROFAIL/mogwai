@@ -66,11 +66,11 @@ class V(object):
     def has_id(self, *ids):
         return self._unpack_step("hasId", ids)
 
-    def has_key(self, *keys):
-        return self._unpack_step("hasKey", keys)
+    # def has_key(self, *keys):
+    #     return self._unpack_step("hasKey", keys)
 
-    def has_value(self, *values):
-        return self._unpack_step("hasValue", values)
+    # def has_value(self, *values):
+    #     return self._unpack_step("hasValue", values)
 
     def out(self, *labels):
         labels = self._get_labels(labels)
@@ -144,6 +144,8 @@ class V(object):
         self._bindings.update({"vid": self._vertex._id})
 
         def process_results(results):
+            if not results:
+                results = []
             if deserialize:
                 results = [Element.deserialize(r) for r in results]
             return results
