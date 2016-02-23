@@ -5,12 +5,11 @@ def first_method(a1, a2) {
 }
 
 def second_method(a1, a2, a3) {
-    def tmp = g.v(a1).outE()
-    tmp.filter{it.id == a2}.has('property', a3)
+    def tmp = g.V(a1).outE().has('property', a3)
 }
 
 def get_self(eid) {
-    g.v(eid)
+    g.V(eid)
 }
 
 def return_value(eid, val) {
@@ -29,7 +28,7 @@ def long_func(eid) {
 	def t = g.startTransaction()
 	try {
 	    if (something) {
-	        g.e(e)
+	        g.E(e)
 	    }
 	} catch(e) {
 	    throw e
@@ -37,11 +36,11 @@ def long_func(eid) {
 }
 
 def arg_test1(self) {
-    g.v(self)
+    g.V(self)
 }
 
 def arg_test2(my_id) {
-    g.v(my_id)
+    g.V(my_id)
 }
 
 def get_table_of_models(element_type) {

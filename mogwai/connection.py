@@ -104,10 +104,6 @@ def setup(host, protocol="ws", graph_name='graph', graph_obj_name='g',
     if metric_reporters:  # pragma: no cover
         metric_manager.setup_reporters(metric_reporters)
 
-    # sock, conn, pool = get_rexpro(stype=concurrency)
-    # store for reference
-    # SOCKET_TYPE = sock
-    # CONNECTION_TYPE = conn
     CONNECTION_POOL_TYPE = Pool
     HOST_PARAMS = _parse_host(host, username, password, graph_name, graph_obj_name)
     url = "{0}://{1}:{2}".format(

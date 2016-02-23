@@ -294,7 +294,7 @@ class GremlinValue(GremlinMethod):
     """Gremlin Method that returns one value"""
 
     def __call__(self, instance, *args, **kwargs):
-        future = future_class()
+        future = connection.future_class()
         future_result = super(GremlinValue, self).__call__(instance, *args, **kwargs)
 
         def on_read(f2):
