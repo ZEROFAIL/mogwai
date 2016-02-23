@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 import logging
 from re import compile
 
-from tornado.concurrent import Future
 from gremlinclient import Pool, GraphDatabase
 
 from mogwai._compat import string_types, array_types
@@ -12,9 +11,7 @@ from mogwai.metrics.manager import MetricManager
 logger = logging.getLogger(__name__)
 
 
-SOCKET_TYPE = None
-CONNECTION_TYPE = None
-CONNECTION_POOL_TYPE = None
+future_class = None
 HOST_PARAMS = None
 _connection_pool = None
 _graph_name = None
@@ -47,7 +44,7 @@ def execute_query(query, params=None, handler=None, transaction=True,
 
     if not connection_pool:  # pragma: no cover
         raise MogwaiConnectionError('Must call mogwai.connection.setup before querying.')
-    future = Future()
+    future = future_class()
     future_conn = connection_pool.acquire()
     def on_connect(f):
         try:
@@ -86,13 +83,23 @@ def _parse_host(host, username, password, graph_name, graph_obj_name='g'):
 
 def setup(host, protocol="ws", graph_name='graph', graph_obj_name='g',
           username='', password='', metric_reporters=None, pool_size=256,
-          concurrency='sync'):
+          concurrency='sync', future=None):
     """  Sets up the connection, and instantiates the models
 
     """
     global _connection_pool
-    global SOCKET_TYPE, CONNECTION_TYPE, CONNECTION_POOL_TYPE, HOST_PARAMS
+    global HOST_PARAMS
     global metric_manager
+    global future_class
+
+    if not future_class:
+        try:
+            from tornado.concurrent import Future
+            future_class = Future
+        except ImportError:
+            raise Exception(
+                "Please install Tornado or explicitly pass a future_class")
+
 
     if metric_reporters:  # pragma: no cover
         metric_manager.setup_reporters(metric_reporters)

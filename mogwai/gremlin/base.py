@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal as _Decimal
 from uuid import UUID as _UUID
 import logging
-from tornado.concurrent import Future
+
 from mogwai._compat import array_types, string_types, integer_types, float_types, iteritems
 from mogwai import connection
 from mogwai.exceptions import MogwaiQueryError, MogwaiGremlinException
@@ -275,7 +275,7 @@ class GremlinMethod(BaseGremlinMethod):
     def __call__(self, instance, *args, **kwargs):
         future_results = super(GremlinMethod, self).__call__(
             instance, *args, **kwargs)
-        future = Future()
+        future = connection.future_class()
 
         def on_call(f):
             try:
@@ -294,7 +294,7 @@ class GremlinValue(GremlinMethod):
     """Gremlin Method that returns one value"""
 
     def __call__(self, instance, *args, **kwargs):
-        future = Future()
+        future = future_class()
         future_result = super(GremlinValue, self).__call__(instance, *args, **kwargs)
 
         def on_read(f2):

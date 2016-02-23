@@ -1,8 +1,6 @@
 from __future__ import unicode_literals
 import logging
 
-from tornado.concurrent import Future
-
 from mogwai._compat import float_types, print_
 from mogwai import connection
 from mogwai.exceptions import MogwaiQueryError

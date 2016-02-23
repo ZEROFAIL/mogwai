@@ -4,8 +4,6 @@ import re
 import warnings
 from collections import OrderedDict
 
-from tornado.concurrent import Future
-
 from mogwai._compat import string_types, print_, add_metaclass
 from mogwai.tools import import_string
 from mogwai import properties
@@ -300,7 +298,8 @@ class BaseElement(object):
         Reload the given element from the database.
 
         """
-        future = Future()
+        from mogwai.connection import future_class
+        future = future_class()
         future_values = self._reload_values(**kwargs)
 
         def on_reload(f):
