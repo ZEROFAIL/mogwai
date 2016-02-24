@@ -3,8 +3,8 @@ import logging
 import warnings
 from functools import wraps
 
+from mogwai import connection
 from mogwai._compat import array_types, string_types
-from mogwai.connection import future_class
 from mogwai.tools import LazyImportClass
 from mogwai.exceptions import MogwaiRelationshipException
 
@@ -114,7 +114,7 @@ class Relationship(object):
             start = end = None
 
         operation = self.direction.lower() + 'V'
-        future = future_class()
+        future = connection.future_class()
         future_result = getattr(self.top_level_vertex, operation)(*allowed_elts)
 
         def on_vertices(f):
@@ -157,7 +157,7 @@ class Relationship(object):
             start = end = None
 
         operation = self.direction.lower() + 'E'
-        future = future_class()
+        future = connection.future_class()
         future_result = getattr(self.top_level_vertex, operation)(*allowed_elts)
 
         def on_edges(f):
@@ -269,7 +269,7 @@ class Relationship(object):
             raise MogwaiRelationshipException("That is not a valid relationship setup: %s <-%s-> %s" %
                                                 (edge_type, self.direction, vertex_type))
 
-        future = future_class()
+        future = connection.future_class()
         new_vertex_future = self._create_entity(vertex_type, vertex_params)
 
         def on_vertex(f):

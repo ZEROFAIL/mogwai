@@ -4,8 +4,8 @@ import re
 import warnings
 from collections import OrderedDict
 
+from mogwai import connection
 from mogwai._compat import string_types, print_, add_metaclass
-from mogwai.connection import future_class
 from mogwai.tools import import_string
 from mogwai import properties
 from mogwai.exceptions import MogwaiException, SaveStrategyException, \
@@ -299,7 +299,7 @@ class BaseElement(object):
         Reload the given element from the database.
 
         """
-        future = future_class()
+        future = connection.future_class()
         future_values = self._reload_values(**kwargs)
 
         def on_reload(f):

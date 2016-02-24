@@ -8,18 +8,6 @@ from mogwai._compat import string_types, array_types
 from mogwai.exceptions import MogwaiConnectionError, MogwaiQueryError
 from mogwai.metrics.manager import MetricManager
 
-# Idk what the best approach is for this
-try:
-    from tornado.concurrent import Future as future_class
-except ImportError:
-    try:
-        from asyncio import Future as future_class
-    except ImportError:
-        try:
-            from trollius import Future as future_class
-        except ImportError:
-            raise Exception("Please install tornado or trollius")
-
 
 logger = logging.getLogger(__name__)
 
@@ -95,13 +83,19 @@ def _parse_host(host, username, password, graph_name, graph_obj_name='g'):
 
 def setup(host, protocol="ws", graph_name='graph', graph_obj_name='g',
           username='', password='', metric_reporters=None, pool_size=256,
-          concurrency='sync'):
+          concurrency='sync', future=None):
     """  Sets up the connection, and instantiates the models
 
     """
     global _connection_pool
     global HOST_PARAMS
     global metric_manager
+    global future_class
+
+    future_class = future
+    if not future_class:
+        from tornado.concurrent import Future
+        future_class = Future
 
     if metric_reporters:  # pragma: no cover
         metric_manager.setup_reporters(metric_reporters)
