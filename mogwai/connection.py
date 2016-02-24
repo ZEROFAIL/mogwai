@@ -116,7 +116,8 @@ def setup(host, protocol="ws", graph_name='graph', graph_obj_name='g',
                                 maxsize=pool_size,
                                 username="",
                                 password="",
-                                force_release=True)
+                                force_release=True,
+                                future_class=future_class)
 
     else:  # pragma: no cover
         raise MogwaiConnectionError("Must Specify at least one host or list of hosts: host: {}, graph_name: {}".format(
