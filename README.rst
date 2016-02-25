@@ -13,7 +13,7 @@ mogwai
 
 
 
-mogwai in an object-graph mapper (OGM) designed specifically for use with Tinkerpop3 graph databases.
+mogwai is an object-graph mapper (OGM) designed specifically for use with Tinkerpop3 graph databases.
 Originally focused on TitanDB (0.5.x and below) (http://thinkaurelius.github.io/titan/) via RexPro (mogwai versions pre-1.x), the current
 focus is now supporting TinkerPop3 based graph databases (ex. Titan 1.x)
 Mogwai supports easily integrating Gremlin graph-traversals with vertex and edge models. For those
