@@ -1,6 +1,10 @@
 mogwai
 ======
 
+.. image:: https://badges.gitter.im/ZEROFAIL/mogwai.svg
+   :alt: Join the chat at https://gitter.im/ZEROFAIL/mogwai
+   :target: https://gitter.im/ZEROFAIL/mogwai?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 .. image:: https://travis-ci.org/ZEROFAIL/mogwai.svg?branch=tinkerpop3
     :target: https://travis-ci.org/ZEROFAIL/mogwai
 
