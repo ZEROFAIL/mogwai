@@ -59,7 +59,7 @@ setup(
                       'six>=1.10.0',
                       'factory-boy>=2.6.0',
                       'pyformance>=0.3.2',
-                      'Twisted>=15.50'],
+                      'Twisted>=15.5.0'],
     extras_require={
         'develop': develop_requires,
         'newrelic': ['newrelic>=2.60.0.46'],
