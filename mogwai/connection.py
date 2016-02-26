@@ -46,6 +46,7 @@ def execute_query(query, params=None, handler=None, transaction=True,
         raise MogwaiConnectionError('Must call mogwai.connection.setup before querying.')
     future = future_class()
     future_conn = connection_pool.acquire()
+
     def on_connect(f):
         try:
             conn = f.result()
@@ -56,6 +57,7 @@ def execute_query(query, params=None, handler=None, transaction=True,
             future.set_result(stream)
 
     future_conn.add_done_callback(on_connect)
+
     return future
 
 
@@ -72,7 +74,7 @@ def _parse_host(host, username, password, graph_name, graph_obj_name='g'):
         d = m.groupdict() if m is not None else {}
         host = d.get('host', None) or '127.0.0.1'
         port = int(d.get('port', None) or 8182)
-        username = d.get('username', None) or username
+        username = d.get('user', None) or username
         password = d.get('password', None) or password
         graph_name = d.get('graph_name', None) or graph_name
         graph_obj_name = graph_obj_name or 'g'
@@ -94,8 +96,12 @@ def setup(host, protocol="ws", graph_name='graph', graph_obj_name='g',
 
     future_class = future
     if not future_class:
-        from tornado.concurrent import Future
-        future_class = Future
+        try:
+            from tornado.concurrent import Future
+            future_class = Future
+        except ImportError:
+            # Should log warning here
+            pass
 
     if metric_reporters:  # pragma: no cover
         metric_manager.setup_reporters(metric_reporters)
@@ -106,10 +112,11 @@ def setup(host, protocol="ws", graph_name='graph', graph_obj_name='g',
         protocol, HOST_PARAMS["host"], HOST_PARAMS["port"])
 
     if isinstance(host, string_types):
+
         _connection_pool = Pool(url,
                                 maxsize=pool_size,
-                                username="",
-                                password="",
+                                username=username,
+                                password=password,
                                 force_release=True,
                                 future_class=future_class)
 
