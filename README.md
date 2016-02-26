@@ -4,22 +4,22 @@
 [![Coverage Status](https://coveralls.io/repos/github/ZEROFAIL/mogwai/badge.svg?branch=tinkerpop3)](https://coveralls.io/github/ZEROFAIL/mogwai?branch=tinkerpop3)
 [![Gitter chat](https://badges.gitter.im/ZEROFAIL/mogwai.svg)](https://gitter.im/ZEROFAIL/mogwai?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-The ZEROFAIL fork of ``mogwai`` is a [TinkerPop3](https://tinkerpop.incubator.apache.org/) [Gremlin Server](http://tinkerpop.apache.org/docs/3.1.1-incubating/reference/#gremlin-server) compatible port of Cody Lee's original Python object graph mapper for Titan 0.5.x. By default, this fork uses @davebshow [gremlinclient](https://github.com/davebshow/gremlinclient) for asynchronous websocket based communication with the Gremlin Server. Like gremlinclient, this library is designed to be multi-platform, allowing the user to choose between [Tornado](http://www.tornadoweb.org/en/stable/), [Trollius](http://trollius.readthedocs.org/), or [Asyncio](https://docs.python.org/3/library/asyncio.html). It aims to provide full support for all TinkerPop3 enabled graph databases; however, it is currently only tested against [Titan:db 1.x](http://s3.thinkaurelius.com/docs/titan/1.0.0/index.html). This fork is under active development.
+The ZEROFAIL fork of ``mogwai`` is a [TinkerPop3](https://tinkerpop.incubator.apache.org/) [Gremlin Server](http://tinkerpop.apache.org/docs/3.1.1-incubating/reference/#gremlin-server) compatible port of Cody Lee's original Python object graph mapper for Titan 0.5.x. This fork uses @davebshow [gremlinclient](https://github.com/davebshow/gremlinclient) for asynchronous websocket based communication with the Gremlin Server, and is therefore designed to be multi-platform, allowing the user to choose between [Tornado](http://www.tornadoweb.org/en/stable/), [Trollius](http://trollius.readthedocs.org/), or [Asyncio](https://docs.python.org/3/library/asyncio.html). It aims to provide full support for all TinkerPop3 enabled graph databases; however, it is currently only tested against [Titan:db 1.x](http://s3.thinkaurelius.com/docs/titan/1.0.0/index.html). This fork is under active development.
 
 ### Example Usage:
 
 Download Titan, unzip, and fire it up:
 
-```
+```sh
 $ wget http://s3.thinkaurelius.com/downloads/titan/titan-1.0.0-hadoop1.zip
 $ unzip titan-1.0.0-hadoop1.zip
 $ cd titan-1.0.0-hadoop1/
 $ ./bin/titan.sh start
 ```
 
-The following example uses Python 3.5. So you'll need to install 3.5. On Ubuntu, you can use deadsnakes:
+The following example uses Python 3.5. On Ubuntu, you can use deadsnakes:
 
-```
+```sh
 $ sudo add-apt-repository ppa:fkrull/deadsnakes
 $ sudo apt-get update
 $ sudo apt-get install python3.5
@@ -27,7 +27,7 @@ $ sudo apt-get install python3.5
 
 Then, if you have virtualenvwrapper, you can do something like this:
 
-```
+```sh
 $ mkvirtualenv -p /usr/bin/python3.5 mogwai
 $ pip install git+https://github.com/ZEROFAIL/mogwai.git@tinkerpop3
 ```
@@ -182,13 +182,13 @@ if __name__ == "__main__":
 
 Shut down Titan:
 
-```
+```sh
 $ ./bin/titan.sh stop
 ```
 
 To download and run the above example:
 
-```
+```sh
 $ git clone https://gist.github.com/e6d622c003c8e0d4dc0d.git
 $ cd e6d622c003c8e0d4dc0d/
 $ python mogwai_example.py
