@@ -1,10 +1,12 @@
-# OGM for TinkerPop3 Gremlin Server
+# THIS FORK IS NO LONGER MAINTAINED, PLEASE HEAD OVER [goblin](https://github.com/ZEROFAIL/goblin) FOR FUTURE DEVELOPPEMENT
+
+OGM for TinkerPop3 Gremlin Server
 
 [![Build Status](https://travis-ci.org/ZEROFAIL/mogwai.svg?branch=tinkerpop3)](https://travis-ci.org/ZEROFAIL/mogwai)
 [![Coverage Status](https://coveralls.io/repos/github/ZEROFAIL/mogwai/badge.svg?branch=tinkerpop3)](https://coveralls.io/github/ZEROFAIL/mogwai?branch=tinkerpop3)
 [![Gitter chat](https://badges.gitter.im/ZEROFAIL/mogwai.svg)](https://gitter.im/ZEROFAIL/mogwai?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-The ZEROFAIL fork of ``mogwai`` is a [TinkerPop3](https://tinkerpop.incubator.apache.org/) [Gremlin Server](http://tinkerpop.apache.org/docs/3.1.1-incubating/reference/#gremlin-server) compatible port of Cody Lee's original Python object graph mapper for Titan 0.5.x. This fork uses @davebshow [gremlinclient](https://github.com/davebshow/gremlinclient) for asynchronous websocket based communication with the Gremlin Server, and is therefore designed to be multi-platform, allowing the user to choose between [Tornado](http://www.tornadoweb.org/en/stable/), [Trollius](http://trollius.readthedocs.org/), or [Asyncio](https://docs.python.org/3/library/asyncio.html). It aims to provide full support for all TinkerPop3 enabled graph databases; however, it is currently only tested against [Titan:db 1.x](http://s3.thinkaurelius.com/docs/titan/1.0.0/index.html). This fork is under active development.
+The ZEROFAIL fork of ``mogwai`` is a [TinkerPop3](https://tinkerpop.incubator.apache.org/) [Gremlin Server](http://tinkerpop.apache.org/docs/3.1.1-incubating/reference/#gremlin-server) compatible port of Cody Lee's original Python object graph mapper for Titan 0.5.x. This fork uses @davebshow [gremlinclient](https://github.com/davebshow/gremlinclient) for asynchronous websocket based communication with the Gremlin Server, and is therefore designed to be multi-platform, allowing the user to choose between [Tornado](http://www.tornadoweb.org/en/stable/), [Trollius](http://trollius.readthedocs.org/), or [Asyncio](https://docs.python.org/3/library/asyncio.html). It aims to provide full support for all TinkerPop3 enabled graph databases; however, it is currently only tested against [Titan:db 1.x](http://s3.thinkaurelius.com/docs/titan/1.0.0/index.html). This fork is deprecated and future developpement is happening over on the [goblin](https://github.com/ZEROFAIL/goblin) project.
 
 ### Example Usage:
 
